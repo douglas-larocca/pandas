@@ -1264,6 +1264,68 @@ class _XlsxWriter(ExcelWriter):
         style_dict: style dictionary to convert
         num_format_str: optional number format string
         """
+        
+        '''
+        mro
+        set_font_strikeout
+        set_align
+        set_has_fill
+        set_bg_color
+        set_has_font
+        set_bold
+        set_hidden
+        set_border
+        set_hyperlink
+        set_border_color
+        set_indent
+        set_bottom
+        set_italic
+        set_bottom_color
+        set_left
+        set_center_across
+        set_left_color
+        set_color
+        set_locked
+        set_color_indexed
+        set_num_format
+        set_diag_border
+        set_num_format_index
+        set_diag_color
+        set_pattern
+        set_diag_type
+        set_reading_order
+        set_dxf_index
+        set_right
+        set_fg_color
+        set_right_color
+        set_font
+        set_rotation
+        set_font_charset
+        set_shrink
+        set_font_color
+        set_size
+        set_font_condense
+        set_text_h_align
+        set_font_extend
+        set_text_justlast
+        set_font_family
+        set_text_v_align
+        set_font_index
+        set_text_wrap
+        set_font_name
+        set_theme
+        set_font_only
+        set_top
+        set_font_outline
+        set_top_color
+        set_font_scheme
+        set_underline
+        set_font_script
+        set_valign
+        set_font_shadow
+        set_xf_index
+        set_font_size
+        '''
 
         # Create a XlsxWriter format object.
         xl_format = self.book.add_format()
