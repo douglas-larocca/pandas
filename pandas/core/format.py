@@ -1525,18 +1525,40 @@ class CSVFormatter(object):
 # ExcelCell = namedtuple("ExcelCell",
 #                        'row, col, val, style, mergestart, mergeend', 'direct_pass')
 
-default_style = {"font": {"name": "Helvetica", "size": 10},
+# these are to be moved to yaml definition
+
+default_style = {"font": {"name": "Helvetica", "size": 10, "bold": False},
                  "cell": {"bg_color": "#FFFFFF"}}
 
 header_style = {"font": {"bold": True, "name": "Helvetica", "size": 10},
-                "alignment": {"horizontal": "left", "vertical": "top"},
+                "alignment": {"horizontal": "right", "vertical": "top"},
+                "cell": {"bg_color": "#FFFFFF"}}
+
+index_label_style = {"font": {"bold": True, "name": "Helvetica", "size": 10},
+                "alignment": {"horizontal": "left", "vertical": "top", "text_wrap": True},
                 "cell": {"bg_color": "#FFFFFF"}}
 
 index_style = {"font": {"bold": False, "name": "Helvetica", "size": 10},
-                "alignment": {"horizontal": "left", "vertical": "top"},
+                "alignment": {"horizontal": "left", "vertical": "top", "text_wrap": True},
                 "cell": {"bg_color": "#FFFFFF"}}
 
-value_style = dict(default_style.items() + {"alignment": {"horizontal": "right", "vertical": "top"}}.items())
+title_style = {"font": {"bold": True, "italic": True,  "name": "Helvetica", "size": 10},
+                "alignment": {"horizontal": "left", "vertical": "top", "text_wrap": True},
+                "cell": {"bg_color": "#FFFFFF"}}
+
+value_style = {"font": {"name": "Helvetica", "size": 10},
+                 "cell": {"bg_color": "#FFFFFF"},
+                 "alignment": {"horizontal": "right", "vertical": "top"}}
+
+aggregation_style = {"font": {"name": "Helvetica", "size": 10, "bold":False},
+                 "cell": {"bg_color": "#FFFFFF"},
+                 "alignment": {"horizontal": "right", "vertical": "top"},
+                 "borders": {"left": 7}}
+
+aggregation_style_bold = {"font": {"name": "Helvetica", "size": 10, "bold": True},
+                 "cell": {"bg_color": "#FFFFFF"},
+                 "alignment": {"horizontal": "right", "vertical": "top"},
+                 "borders": {"left": 7}}
 
 class ExcelCell(object):
     __fields__ = ('row', 'col', 'val', 'style', 'mergestart', 'mergeend', 'direct_pass')
@@ -1586,7 +1608,7 @@ class ExcelFormatter(object):
     def __init__(self, df, na_rep='', float_format=None, date_format=None, 
                  cols=None,
                  header=True, header_label=None, header_style=None,
-                 title=False, title_label=None, title_style=None,
+                 title=True, title_label=None, title_style=None,
                  index=True, index_label=None, index_label_style=None, 
                  merge_cells=False,
                  inf_rep=u'\u221E',
@@ -1622,13 +1644,15 @@ class ExcelFormatter(object):
             self.header_style = df._metadata['header_style']
         
         if title_style is None and 'title_style' in df._metadata:
+            self.title = True
             self.title_style = df._metadata['title_style']
         
         if header_label is None and 'header_label' in df._metadata:
             self.header_label = df._metadata['header_label']
         
         if title_label is None and 'title_label' in df._metadata:
-            self.title = df._metadata['title']
+            self.title = True
+            self.title_label = df._metadata['title_label']
         
         if index_label is None and 'index_label' in df._metadata:
             self.index_label = df._metadata['index_label']
@@ -1640,9 +1664,17 @@ class ExcelFormatter(object):
             self.format_options.update(default_style)
 
     def _format_title(self):
-        yield ExcelCell(0, 0, 0)
+        self.rowcounter += 2
+        if self.title and self.title_label:
+            for title_row in self.title_style:
+                val = '' if title_row['valptr'] == 'null' else self.df._metadata[title_row['valptr']]
+                style = title_row['style']
+                yield ExcelCell(self.rowcounter - 1, 0, val, style)
+        else:
+            yield ExcelCell(self.rowcounter - 1, 0, '', title_style)
 
     def _format_value(self, val):
+        from datetime import datetime
         if lib.checknull(val):
             val = self.na_rep
         elif com.is_float(val):
@@ -1652,6 +1684,8 @@ class ExcelFormatter(object):
                 val = '-%s' % self.inf_rep
             elif self.float_format is not None:
                 val = float(self.float_format % val)
+        elif isinstance(val, datetime):
+            val = datetime.strptime(val, self.date_format).strftime(self.date_format)
         return val
 
     def _format_header_mi(self):
@@ -1719,8 +1753,15 @@ class ExcelFormatter(object):
                     colnames = self.header
 
             for colindex, colname in enumerate(colnames):
+                #print(colname)
+                if colname in self.df._metadata['aggregate_columns']:
+                    style = aggregation_style_bold
+                else:
+                    style = header_style
+
+                print('1751 ',colname)
                 yield ExcelCell(self.rowcounter, colindex + coloffset, colname,
-                                header_style)
+                                style)
 
     def _format_header(self):
         if isinstance(self.columns, MultiIndex):
@@ -1733,6 +1774,7 @@ class ExcelFormatter(object):
             row = [x if x is not None else ''
                    for x in self.df.index.names] + [''] * len(self.columns)
             if reduce(lambda x, y: x and y, map(lambda x: x != '', row)):
+                print('1765 ',val)
                 gen2 = (ExcelCell(self.rowcounter, colindex, val, header_style)
                         for colindex, val in enumerate(row))
                 self.rowcounter += 1
@@ -1747,8 +1789,8 @@ class ExcelFormatter(object):
 
     def _format_regular_rows(self):
         has_aliases = isinstance(self.header, (tuple, list, np.ndarray, Index))
-        if has_aliases or self.header:
-            self.rowcounter += 1
+        #if has_aliases or self.header:
+        #    self.rowcounter += 1
 
         coloffset = 0
         # output index and index_label?
@@ -1766,12 +1808,14 @@ class ExcelFormatter(object):
 
             if index_label and self.header is not False:
                 if self.merge_cells:
+                    print('1800 index_label ',index_label)
                     yield ExcelCell(self.rowcounter,
                                     0,
                                     index_label,
                                     header_style)
                     self.rowcounter += 1
                 else:
+                    print('1807 index_label ',index_label)
                     yield ExcelCell(self.rowcounter - 1,
                                     0,
                                     index_label,
@@ -1784,7 +1828,8 @@ class ExcelFormatter(object):
 
             coloffset = 1
             for idx, idxval in enumerate(index_values):
-                yield ExcelCell(self.rowcounter + idx, 0, idxval, header_style)
+                print('1820 idxval ',idxval)
+                yield ExcelCell(self.rowcounter + idx, 0, idxval, index_style)
 
         # Get a frame that will account for any duplicates in the column names.
         col_mapped_frame = self.df.loc[:, self.columns]
@@ -1793,12 +1838,17 @@ class ExcelFormatter(object):
         for colidx in range(len(self.columns)):
             series = col_mapped_frame.iloc[:, colidx]
             for i, val in enumerate(series):
-                yield ExcelCell(self.rowcounter + i, colidx + coloffset, val)
+                print('1830 val ',val,self.columns[colidx])
+                style = value_style
+                if self.df._metadata.get('aggregate_columns'):
+                    if self.columns[colidx] in self.df._metadata['aggregate_columns']:
+                        style = aggregation_style
+                yield ExcelCell(self.rowcounter + i, colidx + coloffset, val, style)
 
     def _format_hierarchical_rows(self):
         has_aliases = isinstance(self.header, (tuple, list, np.ndarray, Index))
-        if has_aliases or self.header:
-            self.rowcounter += 1
+        #if has_aliases or self.header:
+        #    self.rowcounter += 1
 
         gcolidx = 0
 
@@ -1817,10 +1867,11 @@ class ExcelFormatter(object):
                     self.rowcounter -= 1
 
                 for cidx, name in enumerate(index_labels):
+                    print('1855 name ',name) # index labels
                     yield ExcelCell(self.rowcounter,
                                     cidx,
                                     name,
-                                    header_style)
+                                    index_label_style)
                 self.rowcounter += 1
 
             if self.merge_cells:
@@ -1835,23 +1886,26 @@ class ExcelFormatter(object):
                     values = levels.take(labels)
                     for i in spans:
                         if spans[i] > 1:
+                            print('1874 values[i] ',values[i]) # index multi-index values
                             yield ExcelCell(self.rowcounter + i,
                                             gcolidx,
                                             values[i],
-                                            header_style,
+                                            index_style,
                                             self.rowcounter + i + spans[i] - 1,
                                             gcolidx)
                         else:
+                            print('1882 values[i] ',values[i]) # index values
                             yield ExcelCell(self.rowcounter + i,
                                             gcolidx,
                                             values[i],
-                                            header_style)
+                                            index_style)
                     gcolidx += 1
 
             else:
                 # Format hierarchical rows with non-merged values.
                 for indexcolvals in zip(*self.df.index):
                     for idx, indexcolval in enumerate(indexcolvals):
+                        print('1893 indexcolval ',indexcolval)
                         yield ExcelCell(self.rowcounter + idx,
                                         gcolidx,
                                         indexcolval,
@@ -1865,7 +1919,12 @@ class ExcelFormatter(object):
         for colidx in range(len(self.columns)):
             series = col_mapped_frame.iloc[:, colidx]
             for i, val in enumerate(series):
-                yield ExcelCell(self.rowcounter + i, gcolidx + colidx, val)
+                print('1907 val ',val, self.columns[colidx])
+                style = value_style
+                if self.df._metadata.get('aggregate_columns'):
+                    if self.columns[colidx] in self.df._metadata['aggregate_columns']:
+                        style = aggregation_style
+                yield ExcelCell(self.rowcounter + i, gcolidx + colidx, val, style)
 
     def get_formatted_cells(self):
         for cell in itertools.chain(self._format_title(),

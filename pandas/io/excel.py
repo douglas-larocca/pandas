@@ -1483,23 +1483,24 @@ class _XlsxWriter(ExcelWriter):
         if not border:
             border = style_dict.get('border')
         if border:
-            if style_dict.get('bottom'):
+            print border
+            if border.get('bottom'):
                 xl_format.set_bottom(border['bottom'])
-            if style_dict.get('top'):
+            if border.get('top'):
                 xl_format.set_top(border['top'])
-            if style_dict.get('left'):
+            if border.get('left'):
                 xl_format.set_left(border['left'])
-            if style_dict.get('right'):
+            if border.get('right'):
                 xl_format.set_right(border['right'])
-            if style_dict.get('bottom_color'):
+            if border.get('bottom_color'):
                 xl_format.set_bottom_color(border['bottom_color'])
-            if style_dict.get('top_color'):
+            if border.get('top_color'):
                 xl_format.set_top_color(border['top_color'])
-            if style_dict.get('left_color'):
+            if border.get('left_color'):
                 xl_format.set_left_color(border['left_color'])
-            if style_dict.get('right_color'):
+            if border.get('right_color'):
                 xl_format.set_right_color(border['right_color'])
-            if style_dict.get('border_color'):
+            if border.get('border_color'):
                 xl_format.set_border_color(border['border_color'])
        
         # Map the cell properties to XlsxWriter pattern cell properties
