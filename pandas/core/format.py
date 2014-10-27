@@ -1687,7 +1687,7 @@ class ExcelFormatter(object):
             elif self.float_format is not None:
                 val = float(self.float_format % val)
         elif isinstance(val, datetime):
-            val = datetime.strptime(val, self.date_format).strftime(self.date_format)
+            val = val.strftime(self.date_format)
         return val
 
     def _format_header_mi(self):

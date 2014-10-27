@@ -1483,7 +1483,6 @@ class _XlsxWriter(ExcelWriter):
         if not border:
             border = style_dict.get('border')
         if border:
-            print border
             if border.get('bottom'):
                 xl_format.set_bottom(border['bottom'])
             if border.get('top'):
