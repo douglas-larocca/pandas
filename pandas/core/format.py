@@ -1560,6 +1560,8 @@ aggregation_style_bold = {"font": {"name": "Helvetica", "size": 10, "bold": True
                  "alignment": {"horizontal": "right", "vertical": "top"},
                  "borders": {"left": 7}}
 
+debug_excel_format = False
+
 class ExcelCell(object):
     __fields__ = ('row', 'col', 'val', 'style', 'mergestart', 'mergeend', 'direct_pass')
     __slots__ = __fields__
@@ -1753,13 +1755,13 @@ class ExcelFormatter(object):
                     colnames = self.header
 
             for colindex, colname in enumerate(colnames):
-                #print(colname)
+                #if debug_excel_format == True: print(colname)
                 if colname in self.df._metadata['aggregate_columns']:
                     style = aggregation_style_bold
                 else:
                     style = header_style
 
-                print('1751 ',colname)
+                if debug_excel_format == True: print('1751 ',colname)
                 yield ExcelCell(self.rowcounter, colindex + coloffset, colname,
                                 style)
 
@@ -1774,7 +1776,7 @@ class ExcelFormatter(object):
             row = [x if x is not None else ''
                    for x in self.df.index.names] + [''] * len(self.columns)
             if reduce(lambda x, y: x and y, map(lambda x: x != '', row)):
-                print('1765 ',val)
+                if debug_excel_format == True: print('1765 ',val)
                 gen2 = (ExcelCell(self.rowcounter, colindex, val, header_style)
                         for colindex, val in enumerate(row))
                 self.rowcounter += 1
@@ -1808,14 +1810,14 @@ class ExcelFormatter(object):
 
             if index_label and self.header is not False:
                 if self.merge_cells:
-                    print('1800 index_label ',index_label)
+                    if debug_excel_format == True: print('1800 index_label ',index_label)
                     yield ExcelCell(self.rowcounter,
                                     0,
                                     index_label,
                                     header_style)
                     self.rowcounter += 1
                 else:
-                    print('1807 index_label ',index_label)
+                    if debug_excel_format == True: print('1807 index_label ',index_label)
                     yield ExcelCell(self.rowcounter - 1,
                                     0,
                                     index_label,
@@ -1828,7 +1830,7 @@ class ExcelFormatter(object):
 
             coloffset = 1
             for idx, idxval in enumerate(index_values):
-                print('1820 idxval ',idxval)
+                if debug_excel_format == True: print('1820 idxval ',idxval)
                 yield ExcelCell(self.rowcounter + idx, 0, idxval, index_style)
 
         # Get a frame that will account for any duplicates in the column names.
@@ -1838,7 +1840,7 @@ class ExcelFormatter(object):
         for colidx in range(len(self.columns)):
             series = col_mapped_frame.iloc[:, colidx]
             for i, val in enumerate(series):
-                print('1830 val ',val,self.columns[colidx])
+                if debug_excel_format == True: print('1830 val ',val,self.columns[colidx])
                 style = value_style
                 if self.df._metadata.get('aggregate_columns'):
                     if self.columns[colidx] in self.df._metadata['aggregate_columns']:
@@ -1867,7 +1869,7 @@ class ExcelFormatter(object):
                     self.rowcounter -= 1
 
                 for cidx, name in enumerate(index_labels):
-                    print('1855 name ',name) # index labels
+                    if debug_excel_format == True: print('1855 name ',name) # index labels
                     yield ExcelCell(self.rowcounter,
                                     cidx,
                                     name,
@@ -1886,7 +1888,7 @@ class ExcelFormatter(object):
                     values = levels.take(labels)
                     for i in spans:
                         if spans[i] > 1:
-                            print('1874 values[i] ',values[i]) # index multi-index values
+                            if debug_excel_format == True: print('1874 values[i] ',values[i]) # index multi-index values
                             yield ExcelCell(self.rowcounter + i,
                                             gcolidx,
                                             values[i],
@@ -1894,7 +1896,7 @@ class ExcelFormatter(object):
                                             self.rowcounter + i + spans[i] - 1,
                                             gcolidx)
                         else:
-                            print('1882 values[i] ',values[i]) # index values
+                            if debug_excel_format == True: print('1882 values[i] ',values[i]) # index values
                             yield ExcelCell(self.rowcounter + i,
                                             gcolidx,
                                             values[i],
@@ -1905,7 +1907,7 @@ class ExcelFormatter(object):
                 # Format hierarchical rows with non-merged values.
                 for indexcolvals in zip(*self.df.index):
                     for idx, indexcolval in enumerate(indexcolvals):
-                        print('1893 indexcolval ',indexcolval)
+                        if debug_excel_format == True: print('1893 indexcolval ',indexcolval)
                         yield ExcelCell(self.rowcounter + idx,
                                         gcolidx,
                                         indexcolval,
@@ -1919,7 +1921,7 @@ class ExcelFormatter(object):
         for colidx in range(len(self.columns)):
             series = col_mapped_frame.iloc[:, colidx]
             for i, val in enumerate(series):
-                print('1907 val ',val, self.columns[colidx])
+                if debug_excel_format == True: print('1907 val ',val, self.columns[colidx])
                 style = value_style
                 if self.df._metadata.get('aggregate_columns'):
                     if self.columns[colidx] in self.df._metadata['aggregate_columns']:
