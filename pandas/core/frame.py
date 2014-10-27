@@ -1157,11 +1157,14 @@ class DataFrame(NDFrame):
             return formatter.path_or_buf.getvalue()
 
     @deprecate_kwarg(old_arg_name='cols', new_arg_name='columns')
-    def to_excel(self, excel_writer, sheet_name='Sheet1', na_rep='',
+    def to_excel(self, excel_writer, sheet_name='T1', na_rep='',
                  float_format=None, date_format=None, columns=None, 
-                 header=True, index=True, index_label=None, 
+                 header=True, header_label=None, header_style=None,
+                 title=False, title_label=None, title_style=None,
+                 index=True, index_label=None, index_label_style=None,
+                 format_options=None,
                  startrow=0, startcol=0, engine=None, merge_cells=True, 
-                 encoding=None, inf_rep='inf'):
+                 encoding=None, inf_rep=u'\u221E'):
         """
         Write DataFrame to a excel sheet
 
@@ -1229,15 +1232,21 @@ class DataFrame(NDFrame):
                                        na_rep=na_rep,
                                        cols=columns,
                                        header=header,
+                                       header_style=header_style,
+                                       title=title,
+                                       title_style=title_style,
                                        float_format=float_format,
                                        date_format=date_format,
                                        index=index,
                                        index_label=index_label,
+                                       index_label_style=index_label_style,
+                                       format_options=format_options,
                                        merge_cells=merge_cells,
                                        inf_rep=inf_rep)
         formatted_cells = formatter.get_formatted_cells()
         excel_writer.write_cells(formatted_cells, sheet_name,
-                                 startrow=startrow, startcol=startcol)
+                                 startrow=startrow, startcol=startcol, 
+                                 format_options=format_options)
         if need_save:
             excel_writer.save()
 

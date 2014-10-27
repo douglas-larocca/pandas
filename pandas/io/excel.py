@@ -1222,7 +1222,7 @@ class _XlsxWriter(ExcelWriter):
         """
         return self.book.close()
 
-    def write_cells(self, cells, sheet_name=None, startrow=0, startcol=0):
+    def write_cells(self, cells, sheet_name=None, startrow=0, startcol=0, format_options=None):
         # Write the frame cells using xlsxwriter.
 
         sheet_name = self._get_sheet_name(sheet_name)
@@ -1233,7 +1233,10 @@ class _XlsxWriter(ExcelWriter):
             wks = self.book.add_worksheet(sheet_name)
             self.sheets[sheet_name] = wks
 
-        style_dict = {}
+        if not format_options is None and 'default_style' in format_options:
+            style_dict = format_options['default_style']
+        else:
+            style_dict = {}
 
         for cell in cells:
             num_format_str = None
@@ -1335,13 +1338,44 @@ class _XlsxWriter(ExcelWriter):
         set_font_shadow
         set_xf_index
         set_font_size
+
+        Font	Font type	'font_name'	set_font_name()
+            Font size	'font_size'	set_font_size()
+            Font color	'font_color'	set_font_color()
+            Bold	'bold'	set_bold()
+            Italic	'italic'	set_italic()
+            Underline	'underline'	set_underline()
+            Strikeout	'font_strikeout'	set_font_strikeout()
+            Super/Subscript	'font_script'	set_font_script()
+        Number	Numeric format	'num_format'	set_num_format()
+        Protection	Lock cells	'locked'	set_locked()
+            Hide formulas	'hidden'	set_hidden()
+        Alignment	Horizontal align	'align'	set_align()
+            Vertical align	'valign'	set_align()
+            Rotation	'rotation'	set_rotation()
+            Text wrap	'text_wrap'	set_text_wrap()
+            Justify last	'text_justlast'	set_text_justlast()
+            Center across	'center_across'	set_center_across()
+            Indentation	'indent'	set_indent()
+            Shrink to fit	'shrink'	set_shrink()
+        Pattern	Cell pattern	'pattern'	set_pattern()
+            Background color	'bg_color'	set_bg_color()
+            Foreground color	'fg_color'	set_fg_color()
+        Border	Cell border	'border'	set_border()
+            Bottom border	'bottom'	set_bottom()
+            Top border	'top'	set_top()
+            Left border	'left'	set_left()
+            Right border	'right'	set_right()
+            Border color	'border_color'	set_border_color()
+            Bottom color	'bottom_color'	set_bottom_color()
+            Top color	'top_color'	set_top_color()
+            Left color	'left_color'	set_left_color()
+            Right color	'right_color'	set_right_color()
+
         '''
 
         # Create a XlsxWriter format object.
-        if direct_pass:
-            xl_format = self.book.add_format(style_dict)
-        else:
-            xl_format = self.book.add_format()
+        xl_format = self.book.add_format()
 
         if num_format_str is not None:
             xl_format.set_num_format(num_format_str)
@@ -1350,24 +1384,145 @@ class _XlsxWriter(ExcelWriter):
             return xl_format
 
         # Map the cell font to XlsxWriter font properties.
+        '''
+        Font	Font type	'font_name'	set_font_name()
+            Font size	'font_size'	set_font_size()
+            Font color	'font_color'	set_font_color()
+            Bold	'bold'	set_bold()
+            Italic	'italic'	set_italic()
+            Underline	'underline'	set_underline()
+            Strikeout	'font_strikeout'	set_font_strikeout()
+            Super/Subscript	'font_script'	set_font_script()
+        '''
         if style_dict.get('font'):
             font = style_dict['font']
+            if font.get('name'):
+                xl_format.set_font_name(font['name'])
+            if font.get('size'):
+                xl_format.set_font_size(font['size'])
+            if font.get('color'):
+                xl_format.set_font_color(font['color'])
             if font.get('bold'):
                 xl_format.set_bold()
+            if font.get('italic'):
+                xl_format.set_italic()
+            if font.get('underline'):
+                xl_format.set_underline(font['script'])
+            if font.get('strikeout'):
+                xl_format.set_strikeout()
+            if font.get('script'):
+                xl_format.set_script(font['script'])
 
         # Map the alignment to XlsxWriter alignment properties.
+        '''
+        Alignment	
+            Horizontal align	'align'	set_align()
+                center
+                right
+                fill
+                justify
+                center_across
+            Vertical align	'valign'	set_align()
+                top
+                vcenter
+                bottom
+                vjustify
+            Rotation	'rotation'	set_rotation()
+            Text wrap	'text_wrap'	set_text_wrap()
+            Justify last	'text_justlast'	set_text_justlast()
+            Center across	'center_across'	set_center_across()
+            Indentation	'indent'	set_indent()
+            Shrink to fit	'shrink'	set_shrink()
+        '''
         alignment = style_dict.get('alignment')
         if alignment:
-            if (alignment.get('horizontal')
-                    and alignment['horizontal'] == 'center'):
-                xl_format.set_align('center')
-            if (alignment.get('vertical')
-                    and alignment['vertical'] == 'top'):
-                xl_format.set_align('top')
+            if alignment.get('horizontal'):
+                if alignment['horizontal'] == 'center':
+                    xl_format.set_align('center')
+                elif alignment['horizontal'] == 'right':
+                    xl_format.set_align('right')
+                elif alignment['horizontal'] == 'fill':
+                    xl_format.set_align('fill')
+                elif alignment['horizontal'] == 'justify':
+                    xl_format.set_align('justify')
+                elif alignment['horizontal'] == 'center_across':
+                    xl_format.set_align('center_across')
+            if alignment.get('vertical'):
+                if alignment['vertical'] == 'top':
+                    xl_format.set_align('top')
+                elif alignment['vertical'] == 'vcenter':
+                    xl_format.set_align('vcenter')
+                elif alignment['vertical'] == 'bottom':
+                    xl_format.set_align('bottom')
+                elif alignment['vertical'] == 'vjustify':
+                    xl_format.set_align('vjustify')
+            if alignment.get('rotation'):
+                xl_format.set_rotation(alignment['rotation'])
+            if alignment.get('text_wrap'):
+                xl_format.set_text_wrap()
+            if alignment.get('indent'):
+                xl_format.set_indent(alignment['indent'])
+            if alignment.get('shrink'):
+                xl_format.set_shrink()
+
 
         # Map the cell borders to XlsxWriter border properties.
-        if style_dict.get('borders'):
-            xl_format.set_border()
+        '''
+        Border	Cell border	'border'	set_border()
+            Bottom border	'bottom'	set_bottom()
+            Top border	'top'	set_top()
+            Left border	'left'	set_left()
+            Right border	'right'	set_right()
+            Border color	'border_color'	set_border_color()
+            Bottom color	'bottom_color'	set_bottom_color()
+            Top color	'top_color'	set_top_color()
+            Left color	'left_color'	set_left_color()
+            Right color	'right_color'	set_right_color()
+        '''
+        border = style_dict.get('borders')
+        if not border:
+            border = style_dict.get('border')
+        if border:
+            if style_dict.get('bottom'):
+                xl_format.set_bottom(border['bottom'])
+            if style_dict.get('top'):
+                xl_format.set_top(border['top'])
+            if style_dict.get('left'):
+                xl_format.set_left(border['left'])
+            if style_dict.get('right'):
+                xl_format.set_right(border['right'])
+            if style_dict.get('bottom_color'):
+                xl_format.set_bottom_color(border['bottom_color'])
+            if style_dict.get('top_color'):
+                xl_format.set_top_color(border['top_color'])
+            if style_dict.get('left_color'):
+                xl_format.set_left_color(border['left_color'])
+            if style_dict.get('right_color'):
+                xl_format.set_right_color(border['right_color'])
+            if style_dict.get('border_color'):
+                xl_format.set_border_color(border['border_color'])
+       
+        # Map the cell properties to XlsxWriter pattern cell properties
+        cell = style_dict.get('cell')
+        if cell:
+            if cell.get('pattern'):
+                xl_format.set_pattern(cell['pattern'])
+            if cell.get('fg_color'):
+                xl_format.set_fg_color(cell['fg_color'])
+            if cell.get('bg_color'):
+                xl_format.set_bg_color(cell['bg_color'])
+        
+        # Map the protection to XlsxWriter protection
+        '''
+        Protection	Lock cells	'locked'	set_locked()
+            Hide formulas	'hidden'	set_hidden()
+        '''
+        protect = style_dict.get('protect')
+        if protect:
+            if protect.get('locked'):
+                xl_format.set_locked()
+            if protect.get('hidden'):
+                xl_format.set_hidden()
 
         return xl_format
 

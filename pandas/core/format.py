@@ -1525,6 +1525,11 @@ class CSVFormatter(object):
 # ExcelCell = namedtuple("ExcelCell",
 #                        'row, col, val, style, mergestart, mergeend', 'direct_pass')
 
+header_style = {"font": {"bold": False, "name": "Helvetica", "size": 10},
+                "alignment": {"horizontal": "left", "vertical": "top"}}
+
+default_style = {"font": {"name": "Helvetica", "size": 10}}
+#                 "bg_color": "#FFFFFF"}
 
 class ExcelCell(object):
     __fields__ = ('row', 'col', 'val', 'style', 'mergestart', 'mergeend', 'direct_pass')
@@ -1536,17 +1541,11 @@ class ExcelCell(object):
         self.col = col
         self.val = val
         self.style = style
+        if not style:
+            self.style = default_style
         self.mergestart = mergestart
         self.mergeend = mergeend
         self.direct_pass = direct_pass
-
-
-header_style = {"font": {"bold": False, "name": "Helvetica", "size": 10},
-                "borders": {
-                            "bottom": "thin",
-                            },
-                "alignment": {"horizontal": "left", "vertical": "top"}}
-
 
 class ExcelFormatter(object):
 
@@ -1577,22 +1576,64 @@ class ExcelFormatter(object):
         A `'-'` sign will be added in front of -inf.
     """
 
-    def __init__(self, df, na_rep='', float_format=None, date_format=None, cols=None,
-                 header=True, index=True, index_label=None, merge_cells=False,
-                 inf_rep='inf'):
+    def __init__(self, df, na_rep='', float_format=None, date_format=None, 
+                 cols=None,
+                 header=True, header_label=None, header_style=None,
+                 title=False, title_label=None, title_style=None,
+                 index=True, index_label=None, index_label_style=None, 
+                 merge_cells=False,
+                 inf_rep=u'\u221E',
+                 format_options=None):
         self.df = df
         self.rowcounter = 0
         self.na_rep = na_rep
-        self.columns = cols
-        if cols is None:
-            self.columns = df.columns
         self.float_format = float_format
         self.date_format = date_format
+        self.columns = cols
+        self.header = header
+        self.header_label = header_label
+        self.header_style = header_style
+        self.title = title
+        self.title_label = title_label
+        self.title_style = title_style
         self.index = index
         self.index_label = index_label
-        self.header = header
+        self.index_label_style = index_label_style
         self.merge_cells = merge_cells
         self.inf_rep = inf_rep
+        self.format_options = format_options
+        
+        if cols is None and 'cols' in df._metadata:
+            self.columns = df.metadata['columns']
+        elif cols is None:
+            self.columns = df.columns
+
+        if index_label_style is None and 'index_label_style' in df._metadata:
+            self.index_label_style = df._metadata['index_label_style']
+        
+        if header_style is None and 'header_style' in df._metadata:
+            self.header_style = df._metadata['header_style']
+        
+        if title_style is None and 'title_style' in df._metadata:
+            self.title_style = df._metadata['title_style']
+        
+        if header_label is None and 'header_label' in df._metadata:
+            self.header_label = df._metadata['header_label']
+        
+        if title_label is None and 'title_label' in df._metadata:
+            self.title = df._metadata['title']
+        
+        if index_label is None and 'index_label' in df._metadata:
+            self.index_label = df._metadata['index_label']
+        
+        if format_options is None and 'format_options' in df._metadata:
+            self.format_options = df._metadata['format_options']
+        elif format_options is None:
+            self.format_options = {}
+            self.format_options.update(default_style)
+
+    def _format_title(self):
+        yield ExcelCell(0, 0, 0)
 
     def _format_value(self, val):
         if lib.checknull(val):
@@ -1820,7 +1861,8 @@ class ExcelFormatter(object):
                 yield ExcelCell(self.rowcounter + i, gcolidx + colidx, val)
 
     def get_formatted_cells(self):
-        for cell in itertools.chain(self._format_header(),
+        for cell in itertools.chain(self._format_title(),
+                                    self._format_header(),
                                     self._format_body()):
             cell.val = self._format_value(cell.val)
             yield cell
