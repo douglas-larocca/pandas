@@ -1525,11 +1525,18 @@ class CSVFormatter(object):
 # ExcelCell = namedtuple("ExcelCell",
 #                        'row, col, val, style, mergestart, mergeend', 'direct_pass')
 
-header_style = {"font": {"bold": False, "name": "Helvetica", "size": 10},
-                "alignment": {"horizontal": "left", "vertical": "top"}}
+default_style = {"font": {"name": "Helvetica", "size": 10},
+                 "cell": {"bg_color": "#FFFFFF"}}
 
-default_style = {"font": {"name": "Helvetica", "size": 10}}
-#                 "bg_color": "#FFFFFF"}
+header_style = {"font": {"bold": True, "name": "Helvetica", "size": 10},
+                "alignment": {"horizontal": "left", "vertical": "top"},
+                "cell": {"bg_color": "#FFFFFF"}}
+
+index_style = {"font": {"bold": False, "name": "Helvetica", "size": 10},
+                "alignment": {"horizontal": "left", "vertical": "top"},
+                "cell": {"bg_color": "#FFFFFF"}}
+
+value_style = dict(default_style.items() + {"alignment": {"horizontal": "right", "vertical": "top"}}.items())
 
 class ExcelCell(object):
     __fields__ = ('row', 'col', 'val', 'style', 'mergestart', 'mergeend', 'direct_pass')
