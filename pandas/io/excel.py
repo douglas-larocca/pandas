@@ -490,7 +490,8 @@ class ExcelWriter(object):
         pass
 
     def __init__(self, path, engine=None,
-                 date_format=None, datetime_format=None, **engine_kwargs):
+            date_format=None, datetime_format=None,
+            float_format=None, **engine_kwargs):
         # validate that this engine can handle the extension
         ext = os.path.splitext(path)[-1]
         self.check_extension(ext)
@@ -507,6 +508,10 @@ class ExcelWriter(object):
             self.datetime_format = 'YYYY-MM-DD HH:MM:SS'
         else:
             self.datetime_format = datetime_format
+        if float_format is None:
+            self.float_format = '#,##0.0'
+        else:
+            self.float_format = float_format
 
     def _get_sheet_name(self, sheet_name):
         if sheet_name is None:
@@ -1198,13 +1203,15 @@ class _XlsxWriter(ExcelWriter):
     supported_extensions = ('.xlsx',)
 
     def __init__(self, path, engine=None,
-                 date_format=None, datetime_format=None, **engine_kwargs):
+                 date_format=None, datetime_format=None,
+                 float_format=None, **engine_kwargs):
         # Use the xlsxwriter module as the Excel writer.
         import xlsxwriter
 
         super(_XlsxWriter, self).__init__(path, engine=engine,
                                           date_format=date_format,
                                           datetime_format=datetime_format,
+                                          float_format=float_format,
                                           **engine_kwargs)
 
         self.book = xlsxwriter.Workbook(path, **engine_kwargs)
@@ -1219,7 +1226,7 @@ class _XlsxWriter(ExcelWriter):
         # Write the frame cells using xlsxwriter.
 
         sheet_name = self._get_sheet_name(sheet_name)
-
+        
         if sheet_name in self.sheets:
             wks = self.sheets[sheet_name]
         else:
@@ -1234,6 +1241,8 @@ class _XlsxWriter(ExcelWriter):
                 num_format_str = self.datetime_format
             elif isinstance(cell.val, datetime.date):
                 num_format_str = self.date_format
+            elif isinstance(cell.val, float):
+                num_format_str = self.float_format
 
             stylekey = json.dumps(cell.style)
             if num_format_str:
@@ -1242,7 +1251,7 @@ class _XlsxWriter(ExcelWriter):
             if stylekey in style_dict:
                 style = style_dict[stylekey]
             else:
-                style = self._convert_to_style(cell.style, num_format_str)
+                style = self._convert_to_style(cell.style, num_format_str, cell.direct_pass)
                 style_dict[stylekey] = style
 
             if cell.mergestart is not None and cell.mergeend is not None:
@@ -1256,7 +1265,7 @@ class _XlsxWriter(ExcelWriter):
                           startcol + cell.col,
                           cell.val, style)
 
-    def _convert_to_style(self, style_dict, num_format_str=None):
+    def _convert_to_style(self, style_dict, num_format_str=None, direct_pass=False):
         """
         converts a style_dict to an xlsxwriter format object
         Parameters
@@ -1267,6 +1276,7 @@ class _XlsxWriter(ExcelWriter):
         
         '''
         mro
+
         set_font_strikeout
         set_align
         set_has_fill
@@ -1328,7 +1338,10 @@ class _XlsxWriter(ExcelWriter):
         '''
 
         # Create a XlsxWriter format object.
-        xl_format = self.book.add_format()
+        if direct_pass:
+            xl_format = self.book.add_format(style_dict)
+        else:
+            xl_format = self.book.add_format()
 
         if num_format_str is not None:
             xl_format.set_num_format(num_format_str)

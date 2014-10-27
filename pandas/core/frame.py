@@ -1158,9 +1158,10 @@ class DataFrame(NDFrame):
 
     @deprecate_kwarg(old_arg_name='cols', new_arg_name='columns')
     def to_excel(self, excel_writer, sheet_name='Sheet1', na_rep='',
-                 float_format=None, columns=None, header=True, index=True,
-                 index_label=None, startrow=0, startcol=0, engine=None,
-                 merge_cells=True, encoding=None, inf_rep='inf'):
+                 float_format=None, date_format=None, columns=None, 
+                 header=True, index=True, index_label=None, 
+                 startrow=0, startcol=0, engine=None, merge_cells=True, 
+                 encoding=None, inf_rep='inf'):
         """
         Write DataFrame to a excel sheet
 
@@ -1229,6 +1230,7 @@ class DataFrame(NDFrame):
                                        cols=columns,
                                        header=header,
                                        float_format=float_format,
+                                       date_format=date_format,
                                        index=index,
                                        index_label=index_label,
                                        merge_cells=merge_cells,

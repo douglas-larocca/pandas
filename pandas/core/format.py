@@ -1523,29 +1523,29 @@ class CSVFormatter(object):
 
 # from collections import namedtuple
 # ExcelCell = namedtuple("ExcelCell",
-#                        'row, col, val, style, mergestart, mergeend')
+#                        'row, col, val, style, mergestart, mergeend', 'direct_pass')
 
 
 class ExcelCell(object):
-    __fields__ = ('row', 'col', 'val', 'style', 'mergestart', 'mergeend')
+    __fields__ = ('row', 'col', 'val', 'style', 'mergestart', 'mergeend', 'direct_pass')
     __slots__ = __fields__
 
     def __init__(self, row, col, val,
-                 style=None, mergestart=None, mergeend=None):
+                 style=None, mergestart=None, mergeend=None, direct_pass=False):
         self.row = row
         self.col = col
         self.val = val
         self.style = style
         self.mergestart = mergestart
         self.mergeend = mergeend
+        self.direct_pass = direct_pass
 
 
-header_style = {"font": {"bold": True},
-                "borders": {"top": "thin",
-                            "right": "thin",
+header_style = {"font": {"bold": False, "name": "Helvetica", "size": 10},
+                "borders": {
                             "bottom": "thin",
-                            "left": "thin"},
-                "alignment": {"horizontal": "center", "vertical": "top"}}
+                            },
+                "alignment": {"horizontal": "left", "vertical": "top"}}
 
 
 class ExcelFormatter(object):
@@ -1577,7 +1577,7 @@ class ExcelFormatter(object):
         A `'-'` sign will be added in front of -inf.
     """
 
-    def __init__(self, df, na_rep='', float_format=None, cols=None,
+    def __init__(self, df, na_rep='', float_format=None, date_format=None, cols=None,
                  header=True, index=True, index_label=None, merge_cells=False,
                  inf_rep='inf'):
         self.df = df
@@ -1587,6 +1587,7 @@ class ExcelFormatter(object):
         if cols is None:
             self.columns = df.columns
         self.float_format = float_format
+        self.date_format = date_format
         self.index = index
         self.index_label = index_label
         self.header = header
