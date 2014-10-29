@@ -187,6 +187,7 @@ class Categorical(PandasObject):
 
     # For comparisons, so that numpy uses our implementation if the compare ops, which raise
     __array_priority__ = 1000
+    _typ = 'categorical'
     ordered = False
     name = None
 
@@ -1210,8 +1211,8 @@ class Categorical(PandasObject):
         self._codes[key] = lindexer
 
     #### reduction ops ####
-    def _reduce(self, op, axis=0, skipna=True, numeric_only=None,
-                filter_type=None, name=None, **kwds):
+    def _reduce(self, op, name, axis=0, skipna=True, numeric_only=None,
+                filter_type=None, **kwds):
         """ perform the reduction type operation """
         func = getattr(self,name,None)
         if func is None:
@@ -1464,4 +1465,3 @@ def _convert_to_list_like(list_like):
     else:
         # is this reached?
         return [list_like]
-

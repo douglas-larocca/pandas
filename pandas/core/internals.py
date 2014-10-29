@@ -92,6 +92,21 @@ class Block(PandasObject):
         """ return True if I am a non-datelike """
         return self.is_datetime or self.is_timedelta
 
+    def is_categorical_astype(self, dtype):
+        """
+        validate that we have a astypeable to categorical,
+        returns a boolean if we are a categorical
+        """
+        if com.is_categorical_dtype(dtype):
+            if dtype == com.CategoricalDtype():
+                return True
+
+            # this is a pd.Categorical, but is not
+            # a valid type for astypeing
+            raise TypeError("invalid type {0} for astype".format(dtype))
+
+        return False
+
     def to_dense(self):
         return self.values.view()
 
@@ -345,7 +360,7 @@ class Block(PandasObject):
 
         # may need to convert to categorical
         # this is only called for non-categoricals
-        if com.is_categorical_dtype(dtype):
+        if self.is_categorical_astype(dtype):
             return make_block(Categorical(self.values),
                               ndim=self.ndim,
                               placement=self.mgr_locs)
@@ -534,10 +549,31 @@ class Block(PandasObject):
                                      "different length than the value")
 
         try:
+
+            def _is_scalar_indexer(indexer):
+                # treat a len 0 array like a scalar
+                # return True if we are all scalar indexers
+
+                if arr_value.ndim == 1:
+                    if not isinstance(indexer, tuple):
+                        indexer = tuple([indexer])
+
+                    def _is_ok(idx):
+
+                        if np.isscalar(idx):
+                            return True
+                        elif isinstance(idx, slice):
+                            return False
+                        return len(idx) == 0
+
+                    return all([ _is_ok(idx) for idx in indexer ])
+                return False
+
+
             # setting a single element for each dim and with a rhs that could be say a list
-            # GH 6043
-            if arr_value.ndim == 1 and (
-                np.isscalar(indexer) or (isinstance(indexer, tuple) and all([ np.isscalar(idx) for idx in indexer ]))):
+            # or empty indexers (so no astyping)
+            # GH 6043, 8669 (empty)
+            if _is_scalar_indexer(indexer):
                 values[indexer] = value
 
             # if we are an exact match (ex-broadcasting),
@@ -1682,7 +1718,7 @@ class CategoricalBlock(NonConsolidatableMixIn, ObjectBlock):
         raise on an except if raise == True
         """
 
-        if dtype == com.CategoricalDtype():
+        if self.is_categorical_astype(dtype):
             values = self.values
         else:
             values = np.array(self.values).astype(dtype)

@@ -83,6 +83,17 @@ class Base(object):
                 pass
         tm.assertRaisesRegexp(ValueError,'The truth value of a',f)
 
+    def test_ndarray_compat_properties(self):
+
+        idx = self.create_index()
+        self.assertTrue(idx.T.equals(idx))
+        self.assertTrue(idx.transpose().equals(idx))
+
+        values = idx.values
+        for prop in ['shape', 'ndim', 'size', 'itemsize', 'nbytes']:
+            self.assertEqual(getattr(idx, prop), getattr(values, prop))
+
+
 class TestIndex(Base, tm.TestCase):
     _holder = Index
     _multiprocess_can_split_ = True
@@ -584,7 +595,7 @@ class TestIndex(Base, tm.TestCase):
 
         # - API change GH 8226
         with tm.assert_produces_warning():
-            self.strIndex + self.dateIndex
+            self.strIndex + self.strIndex
 
         firstCat = self.strIndex.union(self.dateIndex)
         secondCat = self.strIndex.union(self.strIndex)
@@ -718,7 +729,7 @@ class TestIndex(Base, tm.TestCase):
 
         # other isn't iterable
         with tm.assertRaises(TypeError):
-            idx1 - 1
+            Index(idx1,dtype='object') - 1
 
     def test_pickle(self):
 
@@ -1121,11 +1132,36 @@ class Numeric(Base):
         tm.assert_index_equal(result,
                               Float64Index(np.arange(5,dtype='float64')*(np.arange(5,dtype='float64')+0.1)))
 
-
         # invalid
         self.assertRaises(TypeError, lambda : idx * date_range('20130101',periods=5))
         self.assertRaises(ValueError, lambda : idx * self._holder(np.arange(3)))
         self.assertRaises(ValueError, lambda : idx * np.array([1,2]))
+
+
+    def test_explicit_conversions(self):
+
+        # GH 8608
+        # add/sub are overriden explicity for Float/Int Index
+        idx = self._holder(np.arange(5,dtype='int64'))
+
+        # float conversions
+        arr = np.arange(5,dtype='int64')*3.2
+        expected = Float64Index(arr)
+        fidx = idx * 3.2
+        tm.assert_index_equal(fidx,expected)
+        fidx = 3.2 * idx
+        tm.assert_index_equal(fidx,expected)
+
+        # interops with numpy arrays
+        expected = Float64Index(arr)
+        a = np.zeros(5,dtype='float64')
+        result = fidx - a
+        tm.assert_index_equal(result,expected)
+
+        expected = Float64Index(-arr)
+        a = np.zeros(5,dtype='float64')
+        result = a - fidx
+        tm.assert_index_equal(result,expected)
 
     def test_ufunc_compat(self):
         idx = self._holder(np.arange(5,dtype='int64'))

@@ -1499,6 +1499,24 @@ class TestGroupBy(tm.TestCase):
         result3 = grouped['C'].agg({'Q': np.sum})
         assert_frame_equal(result3, expected3)
 
+        # GH7115 & GH8112 & GH8582
+        df = DataFrame(np.random.randint(0, 100, (50, 3)),
+                       columns=['jim', 'joe', 'jolie'])
+        ts = Series(np.random.randint(5, 10, 50), name='jim')
+
+        gr = df.groupby(ts)
+        _ = gr.nth(0)  # invokes _set_selection_from_grouper internally
+        assert_frame_equal(gr.apply(sum), df.groupby(ts).apply(sum))
+
+        for attr in ['mean', 'max', 'count', 'idxmax', 'cumsum', 'all']:
+            gr = df.groupby(ts, as_index=False)
+            left = getattr(gr, attr)()
+
+            gr = df.groupby(ts.values, as_index=True)
+            right = getattr(gr, attr)().reset_index(drop=True)
+
+            assert_frame_equal(left, right)
+
     def test_mulitindex_passthru(self):
 
         # GH 7997
@@ -1669,11 +1687,11 @@ class TestGroupBy(tm.TestCase):
                                 lambda x: x.month,
                                 lambda x: x.day], axis=1)
 
-        agged = grouped.agg(lambda x: x.sum(1))
+        agged = grouped.agg(lambda x: x.sum())
         self.assertTrue(agged.index.equals(df.columns))
         assert_almost_equal(df.T.values, agged.values)
 
-        agged = grouped.agg(lambda x: x.sum(1))
+        agged = grouped.agg(lambda x: x.sum())
         assert_almost_equal(df.T.values, agged.values)
 
     def test_groupby_multi_corner(self):
@@ -1708,7 +1726,7 @@ class TestGroupBy(tm.TestCase):
         # won't work with axis = 1
         grouped = df.groupby({'A': 0, 'C': 0, 'D': 1, 'E': 1}, axis=1)
         result = self.assertRaises(TypeError, grouped.agg,
-                                   lambda x: x.sum(1, numeric_only=False))
+                                   lambda x: x.sum(0, numeric_only=False))
 
     def test_omit_nuisance_python_multiple(self):
         grouped = self.three_group.groupby(['A', 'B'])
@@ -2565,7 +2583,6 @@ class TestGroupBy(tm.TestCase):
         grouped = df.groupby(0)
         result = grouped.mean()
         expected = df.groupby(df[0]).mean()
-        del expected[0]
         assert_frame_equal(result, expected)
 
     def test_cython_grouper_series_bug_noncontig(self):
