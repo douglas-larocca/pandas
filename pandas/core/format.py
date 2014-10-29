@@ -1539,7 +1539,7 @@ index_label_style = {"font": {"bold": True, "name": "Helvetica", "size": 10},
                 "cell": {"bg_color": "#FFFFFF"}}
 
 index_style = {"font": {"bold": False, "name": "Helvetica", "size": 10},
-                "alignment": {"horizontal": "left", "vertical": "top", "text_wrap": True},
+                "alignment": {"horizontal": "left", "vertical": "top"},
                 "cell": {"bg_color": "#FFFFFF"}}
 
 title_style = {"font": {"bold": True, "italic": True,  "name": "Helvetica", "size": 10},
