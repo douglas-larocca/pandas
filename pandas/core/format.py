@@ -1842,7 +1842,7 @@ class ExcelFormatter(object):
             for i, val in enumerate(series):
                 if debug_excel_format == True: print('1830 val ',val,self.columns[colidx])
                 style = value_style
-                if self.df._metadata.get('aggregate_columns'):
+                if isinstance(self.df._metadata, dict) and self.df._metadata.get('aggregate_columns'):
                     if self.columns[colidx] in self.df._metadata['aggregate_columns']:
                         style = aggregation_style
                 yield ExcelCell(self.rowcounter + i, colidx + coloffset, val, style)
@@ -1923,7 +1923,7 @@ class ExcelFormatter(object):
             for i, val in enumerate(series):
                 if debug_excel_format == True: print('1907 val ',val, self.columns[colidx])
                 style = value_style
-                if self.df._metadata.get('aggregate_columns'):
+                if isinstance(self.df._metadata, dict) and self.df._metadata.get('aggregate_columns'):
                     if self.columns[colidx] in self.df._metadata['aggregate_columns']:
                         style = aggregation_style
                 yield ExcelCell(self.rowcounter + i, gcolidx + colidx, val, style)
